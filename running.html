@@ -25,11 +25,13 @@
 		<div id="app">
 			<div id="container"></div>
 			<div class="info">
-				path : {{lineArr}}
+				<!-- path : {{lineArr}} -->
 				<hr>
 				time : {{time}}
 				<hr>
 				speed : {{currentSpeed}}
+				<hr>
+				distance: {{distance}}
 			</div>
 		</div>
 	</body>
@@ -47,6 +49,7 @@
 					passedPolyline: null,
 					marker: null,
 					lineArr:[],
+					distance:0,
 				}
 			},
 			mounted() {
@@ -55,9 +58,11 @@
 				// 每隔1s获取参数
 				// 其他速度较快的运动可调整间隔时间
 				setInterval(() => {
-					 this.getUserLocation();
-					 this.time++;
-					 this.showPath();
+					this.getUserLocation();
+					this.time++;
+					this.showPath();
+					this.distance = Math.round(AMap.GeometryUtil.distanceOfLine(this.lineArr));
+					this.currentSpeed = this.distance/this.time;
 				}, 1000);
 			},
 			methods: {
@@ -78,37 +83,28 @@
 					}).then((AMap) => {
 						this.map = new AMap.Map('container', {
 							resizeEnable: true,
+							zoom: 18,
 						});
 						// 缩放控件
 						this.map.addControl(new AMap.ToolBar());
-						// 显示当前位置
+						// 地图聚焦到当前点
 						var options = {
 							'enableHighAccuracy': true, //是否使用高精度定位，默认:true
 							'zoomToAccuracy': true,
 							'timeout': 20000,
-							'showButton': true, //是否显示定位按钮
-							'position': 'LB', //定位按钮的位置
-							/* LT LB RT RB */
-							'offset': [10, 20], //定位按钮距离对应角落的距离
-							'showMarker': true, //是否显示定位点
-							'markerOptions': { //自定义定位点样式，同Marker的Options
-								'offset': new AMap.Pixel(-18, -36),
-								'content': '<img src="https://a.amap.com/jsapi_demos/static/resource/img/user.png" style="width:36px;height:36px"/>'
-							},
+							'showMarker': false, //是否显示定位点
 							'showCircle': false, //是否显示定位精度圈
-							// 'circleOptions': { //定位精度圈的样式
-							// 	'strokeColor': '#0093FF',
-							// 	'noSelect': true,
-							// 	'strokeOpacity': 0.5,
-							// 	'strokeWeight': 1,
-							// 	'fillColor': '#02B0FF',
-							// 	'fillOpacity': 0.25
-							// }
 						}
 						AMap.plugin('AMap.Geolocation', () => {
 							const geolocation = new AMap.Geolocation(options);
 							this.map.addControl(geolocation);
-							geolocation.getCurrentPosition();
+							geolocation.getCurrentPosition((status, result)=> {
+								if (status == 'complete') {
+									
+								} else {
+									// onError(result)
+								}
+							});
 						});
 					}).catch((e) => {
 						console.error(e); //加载错误提示
@@ -117,12 +113,12 @@
 				getUserLocation() {
 					var options = {
 						'enableHighAccuracy': true, //是否使用高精度定位，默认:true
-						'zoomToAccuracy': true,
+						// 'zoomToAccuracy': true,
 						'timeout': 20000,
-						'showButton': true, //是否显示定位按钮
-						'position': 'LB', //定位按钮的位置
+						// 'showButton': true, //是否显示定位按钮
+						// 'position': 'LB', //定位按钮的位置
 						/* LT LB RT RB */
-						'offset': [10, 20], //定位按钮距离对应角落的距离
+						// 'offset': [10, 20], //定位按钮距离对应角落的距离
 						'showMarker': true, //是否显示定位点
 						'markerOptions': { //自定义定位点样式，同Marker的Options
 							'offset': new AMap.Pixel(-18, -36),
@@ -131,7 +127,7 @@
 						'showCircle': false, //是否显示定位精度圈
 					}
 					const geolocation = new AMap.Geolocation(options);
-					this.map.addControl(geolocation);
+					// this.map.addControl(geolocation);
 					geolocation.getCurrentPosition((status, result)=> {
 						if (status == 'complete') {
 							// console.log(result.position)
@@ -142,22 +138,23 @@
 					});
 				},
 				showPath() {
-					// const start_icon = new AMap.Icon({
-					// 	size: new AMap.Size(40, 40), //图标尺寸
-					// 	image: "../../static/start_point.png", //Icon 的图像
-					// 	imageSize: new AMap.Size(50, 50), //根据所设置的大小拉伸或压缩图片
-					// });
+					const start_icon = new AMap.Icon({
+						size: new AMap.Size(40, 40), //图标尺寸
+						image: "../../static/foot.png", //Icon 的图像
+						imageSize: new AMap.Size(50, 50), //根据所设置的大小拉伸或压缩图片
+					});
+
+					var start_marker = new AMap.Marker({
+						map: this.map,
+						icon: start_icon,
+						position: this.lineArr[0],
+						offset: new AMap.Pixel(-23, -40)
+					});
+					
 					// const end_icon = new AMap.Icon({
 					// 	size: new AMap.Size(40, 40),
 					// 	image: "../../static/end_point.png",
 					// 	imageSize: new AMap.Size(50, 50),
-					// });
-
-					// var start_marker = new AMap.Marker({
-					// 	map: this.map,
-					// 	icon: start_icon,
-					// 	position: this.lineArr[0],
-					// 	offset: new AMap.Pixel(-23, -40)
 					// });
 
 					// var end_marker = new AMap.Marker({
